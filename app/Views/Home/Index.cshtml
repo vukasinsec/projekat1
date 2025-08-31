@@ -1,0 +1,68 @@
+﻿@model app.Models.User
+@{
+    ViewData["Title"] = "Home";
+    var userName = User.Identity.IsAuthenticated ? User.Identity.Name : null;
+    var loggedInUserId = User.Identity.IsAuthenticated
+        ? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+        : null;
+}
+
+<div class="text-center my-5">
+    <h1 class="display-5 fw-semibold">
+        @if (!string.IsNullOrEmpty(userName))
+        {
+            @($"Welcome, {userName}!")
+        }
+        else
+        {
+            @("Welcome to My Application")
+        }
+    </h1>
+</div>
+
+<div class="container mt-5">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">All Users</h5>
+        </div>
+        <div class="card-body">
+            <ul id="user-list" class="list-group list-group-flush">
+                <!-- Users will be dynamically added here -->
+            </ul>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const loggedInUserId = '@loggedInUserId';
+
+        async function fetchUsers() {
+            try {
+                const response = await fetch(`/User/AllUsers?loggedInUserId=${loggedInUserId}`);
+                if (!response.ok) throw new Error('Failed to fetch users');
+
+                const users = await response.json();
+                const userList = document.getElementById('user-list');
+                userList.innerHTML = ''; // Clear in case it's rerun
+
+                users.forEach(user => {
+                    const listItem = document.createElement('li');
+                    listItem.className = 'list-group-item';
+
+                    const userLink = document.createElement('a');
+                    userLink.href = `/User/UserPage/${user.username}`;
+                    userLink.textContent = `${user.fullName} (${user.email})`;
+                    userLink.className = 'text-decoration-none text-dark fw-medium';
+
+                    listItem.appendChild(userLink);
+                    userList.appendChild(listItem);
+                });
+            } catch (error) {
+                console.error('Error fetching users:', error);
+            }
+        }
+
+        window.onload = fetchUsers;
+    </script>
+}

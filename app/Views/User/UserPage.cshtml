@@ -1,0 +1,1205 @@
+﻿@model app.Models.User
+@using System.Security.Claims
+
+@{
+    ViewData["Title"] = "User Profile";
+}
+
+<div class="container-fluid d-flex flex-column vh-100">
+    <!-- Header -->
+    <header class="bg-primary text-white text-center py-3">
+        <h1 class="display-5">User Profile</h1>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow-1 overflow-auto py-4">
+        <div class="container profile-container">
+            <div class="row">
+                <!-- User Details Section -->
+                <div class="col-12 col-lg-6 mb-4">
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            <h5 class="card-title text-primary">Profile Details</h5>
+            <hr />
+            <p><strong>Username:</strong> @Model.Username</p>
+            <p><strong>Full Name:</strong> @Model.FullName</p>
+            <p><strong>Bio:</strong> @Model.Bio</p>
+        </div>
+    </div>
+</div>
+
+                <!-- Profile Picture Section -->
+                <div class="col-12 col-lg-6 mb-4">
+    <div class="card shadow-sm border-0 text-center">
+        <div class="card-body">
+            <h5 class="card-title text-primary">Profile Picture</h5>
+            <hr />
+            @if (string.IsNullOrEmpty(Model.ProfilePicture))
+            {
+                <p>No profile picture available.</p>
+            }
+            else
+            {
+                <img src="@Model.ProfilePicture" class="rounded-circle img-thumbnail" style="width: 200px;" />
+            }
+        </div>
+    </div>
+</div>
+
+            </div>
+
+            <!-- Buttons -->
+            <div class="d-flex flex-wrap justify-content-center gap-3 my-4">
+    
+    <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addFriendModal">
+        <i class="bi bi-person-plus"></i> Add Friend
+    </button>
+
+    @if (User.Identity.IsAuthenticated && User.Identity.Name == Model.Username) // Check if the user is authenticated and is the profile owner
+    {
+                            
+
+    <button class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#addPostModal">
+        <i class="bi bi-image"></i> Add Post
+    </button>
+    <button class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#updateProfileModal">
+        <i class="bi bi-pencil-square"></i> Update Profile
+    </button>
+    <button class="btn btn-outline-danger" onclick="openDeleteUserModal()">
+        <i class="bi bi-trash"></i> Delete Profile
+    </button>
+
+    }
+
+
+</div>
+
+            <div class="col-12 col-md-6 mb-4">
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            <h5 class="card-title text-success">
+                Friends (<span id="friendsCountNumber">0</span>)
+            </h5>
+            <ul class="list-group" id="friendsList" style="display: none;"></ul>
+        </div>
+    </div>
+</div>
+
+
+
+           <div class="col-12 col-md-6 mb-4">
+    <div class="card shadow-sm border-0 h-100">
+        <div class="card-body d-flex flex-column">
+            <h5 class="card-title text-info mb-4">Posts</h5>
+            <ul class="list-group flex-grow-1 overflow-auto" id="postList" style="max-height: 400px;">
+                <!-- Dinamički dodati postovi -->
+            </ul>
+            <p id="noPostsMsg" class="text-muted small mt-3 d-none">No posts available.</p>
+        </div>
+    </div>
+</div>
+
+
+    </main>
+
+
+    
+</div>
+
+<!-- Modal for User Deletion Confirmation -->
+<div class="modal fade" id="deleteUserModal" tabindex="-1" aria-labelledby="deleteUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteUserModalLabel">Delete Your Profile</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete your profile? This action cannot be undone.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteUserButton">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+@* <!-- Add Comment Modal -->
+<div class="modal fade" id="addCommentModal" tabindex="-1" aria-labelledby="addCommentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addCommentModalLabel">Add Comment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" action="@Url.Action("AddComment", "Comment")" id="addCommentForm">
+                    <input type="hidden" id="postId" name="postId" />
+                    <div class="mb-3">
+                        <label for="commentContent" class="form-label">Your Comment</label>
+                        <textarea class="form-control" id="commentContent" name="content" rows="3" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Comment</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div> *@
+<!-- Add Friend Modal -->
+<div class="modal fade" id="addFriendModal" tabindex="-1" aria-labelledby="addFriendModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addFriendModalLabel">Search Users</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="text" class="form-control" id="searchBar" placeholder="Search Users" oninput="searchUsers()" autocomplete="off" />
+                <ul class="list-group mt-2" id="userList" style="display: none;"></ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Post Modal -->
+<div class="modal fade" id="addPostModal" tabindex="-1" aria-labelledby="addPostModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addPostModalLabel">Add Post</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" action="@Url.Action("AddPost", "PostController")" enctype="multipart/form-data" id="addPostForm" onsubmit="submitPost(event)">
+                    <div class="mb-3">
+                        <label for="image" class="form-label">Choose Image</label>
+                        <input type="file" class="form-control" id="imageURL" name="imageURL" accept="image" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="caption" class="form-label">Post Caption</label>
+                        <textarea class="form-control" id="caption" name="caption" rows="3" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-success">Add Post</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal for updating a post -->
+<div class="modal" tabindex="-1" id="updatePostModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Update Post</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="updatePostForm">
+                    <div class="mb-3">
+                        <label for="updateCaption" class="form-label">Caption</label>
+                        <input type="text" class="form-control" id="updateCaption" name="caption">
+                    </div>
+                    <div class="mb-3">
+                        <label for="updateImage" class="form-label">Image URL</label>
+                        <input type="text" class="form-control" id="updateImage" name="imageURL">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Update Post</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal for delete confirmation -->
+<div class="modal fade" id="deletePostModal" tabindex="-1" aria-labelledby="deletePostModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deletePostModalLabel">Delete Post</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete this post?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteButton">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for adding a comment -->
+<div class="modal fade" id="addCommentModal" tabindex="-1" aria-labelledby="addCommentModalLabel">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addCommentModalLabel">Add Comment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="handleModalClose()"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addCommentForm">
+                    <div class="mb-3">
+                        <label for="commentContent" class="form-label">Comment</label>
+                        <textarea class="form-control" id="commentContent" rows="3" required></textarea>
+                    </div>
+                    <input type="hidden" id="commentPostId" />
+                    <input type="hidden" id="commentAuthorUserId" />
+                    <input type="hidden" id="loggedInUserId" value="@User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value" />
+
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitComment()">Add Comment</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal za ažuriranje profila -->
+<div class="modal fade" id="updateProfileModal" tabindex="-1" aria-labelledby="updateProfileModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="updateProfileModalLabel">Update Profile</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="updateProfileForm" method="put" enctype="multipart/form-data" action="/UpdateUser/@Model.UserId">
+                    <div class="mb-3">
+                        <label for="bio" class="form-label">Bio</label>
+                        <textarea class="form-control" id="bio" name="bio" rows="3">@Model.Bio</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="profilePicture" class="form-label">Profile Picture</label>
+                        @if (!string.IsNullOrEmpty(Model.ProfilePicture))
+                        {
+                            <img src="@Model.ProfilePicture" alt="Profile Picture" class="img-thumbnail mb-2" width="150" />
+                        }
+                        <input type="file" class="form-control" id="profilePicture" name="profilePicture" value="@Model.ProfilePicture"  />
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary" onclick="updateProfile()">Update</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="editCommentModal" tabindex="-1" aria-labelledby="editCommentModalLabel">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editCommentModalLabel">Edit Comment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editCommentForm">
+                    <div class="mb-3">
+                        <label for="editCommentContent" class="form-label">Comment</label>
+                        <textarea class="form-control" id="editCommentContent" rows="3" required></textarea>
+                    </div>
+                    <input type="hidden" id="editCommentId" />
+                    <input type="hidden" id="commentPostId" />
+
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitEditComment()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+
+    
+
+    // Open the modal for user deletion
+    function openDeleteUserModal() {
+        const userId = '@Model.UserId'; // Replace with the correct Razor variable for the user ID
+        fetch(`/User/${userId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Redirect to login or homepage after logout and deletion
+                    window.location.href = '/Account/Login';
+                    alert("Deleted!");
+                } else {
+                    alert("Failed to delete user: " + data.error);
+                }
+            })
+            .catch(error => {
+                console.error("Error deleting user:", error);
+            });
+
+    }
+    function updateProfile() {
+        // Pronađi formu
+        const form = document.getElementById("updateProfileForm");
+
+        // Prikupljanje podataka iz forme
+        const formData = new FormData(form);
+
+        // Ispisivanje sadržaja formData za debugovanje
+        for (let pair of formData.entries()) {
+            console.log(pair[0] + ': ' + pair[1]);
+        }
+
+        // Slanje PUT zahteva sa formData
+        const userId = "@Model.UserId";  // Zameniti sa stvarnim ID-jem
+        fetch('/User/UpdateUser/' + userId, {
+            method: 'PUT',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message === "User updated successfully") {
+                    // Ako je ažuriranje uspešno, zatvori modal i osveži korisničke podatke
+                    $('#updateProfileModal').modal('hide');
+                    alert('Profile updated successfully!');
+                    location.reload();  // Osvežava stranicu
+                } else {
+                    alert('Error updating profile: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('There was an error updating your profile.');
+            });
+    }
+
+
+
+    // function updateProfile() {
+    //     const username = document.getElementById('username').value;
+    //     const bio = document.getElementById('bio').value;
+    //     const profilePicture = document.getElementById('profilePicture').files[0];
+
+    //     const formData = new FormData();
+    //     formData.append('username', username);
+    //     formData.append('bio', bio);
+    //     if (profilePicture) {
+    //         formData.append('profilePicture', profilePicture);
+    //     }
+
+    //     fetch('/User/UpdateUser/' + @Model.UserId, {
+    //         method: 'PUT',
+    //         body: formData
+    //     })
+    //         .then(response => response.json())
+    //         .then(data => {
+    //             if (data.message === "User updated successfully") {
+    //                 // Update the profile data on the page
+    //                 document.querySelector('.profile-container .profile-details p:nth-child(1)').innerText = username;
+    //                 document.querySelector('.profile-container .profile-details p:nth-child(3)').innerText = bio;
+    //                 if (profilePicture) {
+    //                     const reader = new FileReader();
+    //                     reader.onload = function (e) {
+    //                         document.querySelector('.profile-img').src = e.target.result;
+    //                     };
+    //                     reader.readAsDataURL(profilePicture);
+    //                 }
+    //                 alert('Profile updated successfully!');
+    //                 // Close the modal
+    //                 $('#updateModal').modal('hide');
+    //             } else {
+    //                 alert('Error updating profile');
+    //             }
+    //         })
+    //         .catch(error => alert('Error: ' + error));
+    // }
+
+
+    function openCommentModal(postId, authorUserId) {
+
+        // Postavite postId i authorUserId u skrivena polja
+        document.getElementById("commentPostId").value = postId;
+        document.getElementById("commentAuthorUserId").value = authorUserId;
+
+        // Prikazivanje modala koristeći Bootstrap API
+        const addCommentModal = new bootstrap.Modal(document.getElementById("addCommentModal"));
+        addCommentModal.show();
+
+        // Onemogući interakciju sa pozadinom
+        document.querySelector('.modal-backdrop').style.pointerEvents = 'none';
+    }
+    
+    // Funkcija za slanje komentara na server
+    async function submitComment() {
+        const postId = document.getElementById("commentPostId").value;
+        const content = document.getElementById("commentContent").value;
+
+        // Provera da li je komentar unet
+        if (!content.trim()) {
+            alert("Content cannot be empty.");
+            return;
+        }
+
+        const loggedInUserId = document.getElementById("loggedInUserId").value;
+
+        // Podaci koji će biti poslati na server
+        const commentData = {
+            CommentId: "",
+            Content: content,
+            Author: {
+                UserId: loggedInUserId,
+                ProfilePicture: ""
+            },
+            Post: { postId: postId }
+        };
+        console.log(commentData);
+
+        try {
+            // Slanje POST zahteva na server
+            const response = await fetch('/Comment/AddComment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(commentData)
+            });
+
+            const result = await response.json();
+            console.log(result);  // Ispisivanje odgovora servera
+
+            if (response.ok) {
+                alert("Comment added successfully.");
+                const addCommentModal = bootstrap.Modal.getInstance(document.getElementById("addCommentModal"));
+                addCommentModal.hide();
+                loadComments(postId);  // Učitaj nove komentare
+            } else {
+                alert(`Error: ${result.Message}`);
+            }
+
+         
+
+        } catch (error) {
+            const result = await response.json();
+            console.log(result.errors); // Ovo će ti reći koja polja imaju problem
+            console.error("Error adding comment:", error);
+            alert("An error occurred while adding the comment.");
+        }
+    }
+
+
+
+
+           async function searchUsers() {
+        const query = document.getElementById("searchBar").value;
+
+        if (query.length === 0) {
+            document.getElementById("userList").style.display = "none";
+            return;
+        }
+
+        const response = await fetch(`/User/SearchUsernames?query=${query}`);
+        const usernames = await response.json();
+
+        const userList = document.getElementById("userList");
+        userList.innerHTML = '';
+
+        if (usernames.length > 0) {
+            userList.style.display = "block";
+
+            usernames.forEach(username => {
+                const listItem = document.createElement("li");
+                listItem.classList.add("list-group-item", "d-flex", "justify-content-between", "align-items-center");
+
+                const userNameSpan = document.createElement("span");
+                userNameSpan.textContent = username;
+
+                const addButton = document.createElement("button");
+                addButton.classList.add("btn", "btn-success", "btn-sm");
+                addButton.textContent = "Add";
+
+                addButton.addEventListener('click', async () => {
+                    const loggedInUserId = '@Model.UserId'; // Replace this with actual user ID
+
+                    const addFriendResponse = await fetch(`/User/AddFriend?currentUserId=${loggedInUserId}&friendUsername=${username}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                    });
+
+                    const result = await addFriendResponse.json();
+                    if (result.success) {
+                        // Hide modal
+                        const addFriendModal = document.getElementById("addFriendModal");
+                        const modalInstance = bootstrap.Modal.getInstance(addFriendModal);
+                        modalInstance.hide();
+
+                        // Show success message
+                        alert('Friend added successfully!');
+
+                        // Refresh friends list
+                        await loadFriends();
+                    } else {
+                        alert('Failed to add friend: ' + result.message);
+                    }
+                });
+
+                listItem.appendChild(userNameSpan);
+                listItem.appendChild(addButton);
+                userList.appendChild(listItem);
+            });
+        } else {
+            userList.style.display = "none";
+        }
+    }
+
+
+    function submitPost(event) {
+        event.preventDefault(); // Prevent the default form behavior
+
+        const form = document.getElementById("addPostForm");
+        const formData = new FormData(form);
+
+        fetch(form.action, {
+            method: "POST",
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Close the modal
+                    const addPostModal = document.getElementById("addPostModal");
+                    const modalInstance = bootstrap.Modal.getInstance(addPostModal);
+                    modalInstance.hide();
+                    loadPosts(); // Reload posts
+                } else {
+                    alert("Failed to add post: " + data.error);
+                }
+            })
+            .catch(error => {
+                console.error("Error submitting post:", error);
+            });
+    }
+
+    async function loadPosts() {
+        const userId = '@Model.UserId'; // Zamenite dinamičkim vrednostima ukoliko nije u razor syntax-u
+        try {
+            const response = await fetch(`/PostController/GetPosts?userId=${userId}`);
+            const posts = await response.json();
+
+            const postList = document.getElementById("postList");
+            postList.innerHTML = ''; // Očistite postojeći sadržaj
+
+            if (posts.length === 0) {
+                postList.innerHTML = "<li class='list-group-item'>No posts available.</li>";
+                return;
+            }
+
+            for (const post of posts) {
+                const listItem = document.createElement("li");
+                listItem.classList.add("list-group-item");
+                listItem.innerHTML = `
+                        <strong>${post.caption}</strong><br/>
+                        <img src="${post.imageURL}" alt="Post Image" class="img-thumbnail post-img" />
+                        <div class="d-flex justify-content-between mt-2">
+    @if (User.Identity.IsAuthenticated && User.Identity.Name == Model.Username) // Check if the user is authenticated and is the profile owner
+    {
+                            <button class="btn btn-warning btn-sm" onclick="updatePost('${post.postId}')">Update</button>
+                            <button class="btn btn-danger btn-sm" onclick="confirmDelete('${post.postId}')">Delete</button>
+    }
+                            <button
+                                class="heart-button btn-sm"
+                                id="likeButton-${post.postId}"
+                                onclick="likePost('${post.postId}')">
+                                &#9829; <!-- Unicode za srce -->
+                            </button>
+                            <button class="btn btn-danger btn-sm" id="unlikeButton-${post.postId}" onclick="unlikePost('${post.postId}')" style="display: none;">Unlike</button>
+                            <button class="btn btn-primary btn-sm" onclick="openCommentModal('${post.postId}', '${post.author}')">Comment</button>
+                            <span id="likeCount-${post.postId}">${post.likeCount}</span> Likes
+                        </div>
+                        <div id="commentsSection-${post.postId}" class="comments-section">
+                            Loading comments...
+                        </div>
+                    `;
+                postList.appendChild(listItem);
+
+                // Pozivanje funkcije za učitavanje komentara nakon što post bude prikazan
+                await loadComments(post.postId);
+            }
+        } catch (error) {
+            console.error("Error fetching posts:", error);
+        }
+    }
+
+    let friendsLoaded = false;  // Flag to check if friends are already loaded
+
+    async function loadFriends() {
+        const userId = '@Model.UserId'; // This should be the logged-in user ID
+
+        try {
+            const response = await fetch(`/User/GetFriends?userId=${userId}`);
+            const friends = await response.json();
+
+            const friendsList = document.getElementById("friendsList");
+            const friendsCountNumber = document.getElementById("friendsCountNumber");
+            friendsList.innerHTML = ''; // Clear any existing content
+
+            // Update the friends count
+            friendsCountNumber.innerText = friends.length;
+
+            if (friends.length === 0) {
+                friendsList.innerHTML = "<li class='list-group-item'>No friends available.</li>";
+                return;
+            }
+
+            for (const friend of friends) {
+                const listItem = document.createElement("li");
+                listItem.classList.add("list-group-item", "d-flex", "justify-content-between", "align-items-center");
+
+                listItem.innerHTML = `
+                    <span>
+                        <a href="/User/UserPage/${friend.username}" class="text-decoration-none">${friend.fullName} (${friend.username})</a>
+                    </span>
+                    <div class="d-flex justify-content-between">
+                        <button class="btn btn-success btn-sm" onclick="removeFriend('${friend.userId}')">Remove</button>
+                    </div>
+                `;
+                friendsList.appendChild(listItem);
+            }
+        } catch (error) {
+            console.error("Error fetching friends:", error);
+        }
+    }
+
+    function toggleFriendsList() {
+        const friendsList = document.getElementById("friendsList");
+
+        // If the friends list is not yet loaded, load it
+        if (!friendsLoaded) {
+            loadFriends();
+            friendsLoaded = true;  // Set the flag to true after loading the friends
+        }
+
+        // Toggle visibility of the friends list
+        if (friendsList.style.display === "none") {
+            friendsList.style.display = "block";  // Show the list
+        } else {
+            friendsList.style.display = "none";   // Hide the list
+        }
+    }
+
+    async function removeFriend(friendId) {
+        const currentUserId = '@Model.UserId'; // Logged-in user ID
+
+        try {
+                       const response = await fetch(`/User/RemoveFriend?currentUserId=${currentUserId}&friendId=${friendId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+    });
+
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                alert("Friend removed successfully.");
+                loadFriends(); // Refresh the friends list
+            } else {
+                alert(result.message || "An error occurred while removing the friend.");
+            }
+        } catch (error) {
+            console.error("Error removing friend:", error);
+            alert("An error occurred while removing the friend.");
+        }
+    }
+
+
+
+    async function loadComments(postId) {
+        try {
+            if (!postId) {
+                console.error("Invalid postId:", postId);
+                alert("Invalid post ID.");
+                return;
+            }
+
+            console.log("Fetching comments for postId:", postId);
+            const response = await fetch(`/Comment/GetComments/${postId}`);
+            const rawResponse = await response.clone().text();
+            console.log("Raw response body:", rawResponse);
+
+            let comments;
+            try {
+                comments = JSON.parse(rawResponse);
+            } catch (parseError) {
+                console.error("Failed to parse response as JSON:", parseError);
+                alert("Failed to load comments.");
+                return;
+            }
+
+            console.log("Fetched comments:", comments);
+
+            const commentsSection = document.getElementById(`commentsSection-${postId}`);
+            if (!commentsSection) {
+                console.error(`Comments section not found for postId: ${postId}`);
+                return;
+            }
+
+            commentsSection.innerHTML = ''; // Očistite postojeće komentare
+
+            if (!Array.isArray(comments) || comments.length === 0) {
+                const noCommentsMessage = document.createElement("div");
+                noCommentsMessage.classList.add("no-comments");
+                noCommentsMessage.textContent = "Nema komentara još.";
+                commentsSection.appendChild(noCommentsMessage);
+                return;
+            }
+
+            const loggedInUserId = document.getElementById("loggedInUserId").value; // ID ulogovanog korisnika
+            var currentUserName = "@User.Identity.Name";//ovo uzima username
+            console.log("Current user name:", currentUserName);
+
+            // Prikaži komentare ako postoje
+            comments.forEach(comment => {
+                const isAuthor = comment.authorName === currentUserName;
+                console.log("Comment author:", comment.authorName);//ovo uzima full name
+
+                const commentElement = document.createElement("div");
+                commentElement.classList.add("comment");
+                commentElement.innerHTML = `
+                        <p><strong>${comment.authorName}</strong>: ${comment.content}</p>
+                        <small>${new Date(comment.createdAt).toLocaleString()}</small>
+                              <div>
+                        ${isAuthor ? `
+                    <button class="btn btn-warning btn-sm" onclick="openEditCommentModal('${comment.commentId}', '${comment.content.replace(/'/g, "\\'")}')">Edit</button>
+                    ` : ''}
+                                    <button id="likeButtonComment-${comment.commentId}" class="btn btn-light btn-sm" onclick="likeComment('${comment.commentId}')">
+                    Like
+                </button>
+                    <span id="likeCountComment-${comment.commentId}">${comment.likeCount}</span>
+                    ${isAuthor ? `
+            <button class="btn btn-danger btn-sm" onclick="removeComment('${comment.commentId}')">Remove</button>
+        ` : ''}
+                </div>
+            `;
+
+
+                commentsSection.appendChild(commentElement);
+            });
+        } catch (error) {
+            console.error("Error loading comments:", error);
+            const commentsSection = document.getElementById(`commentsSection-${postId}`);
+            if (commentsSection) {
+                commentsSection.innerHTML = '<div class="error-message">Greška prilikom učitavanja komentara.</div>';
+            }
+        }
+    }
+
+    function removeComment(commentId) {
+        console.log('Trying to delete comment with ID:', commentId);
+
+        if (confirm("Are you sure you want to delete this comment?")) {
+            fetch(`/Comment/DeleteComment/${commentId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    // Dodajte token za autentifikaciju ako je potrebno
+                }
+            })
+                .then(response => {
+                    console.log('Server Response:', response);  // Proveri šta server vraća
+                    if (!response.ok) {
+                        return response.text().then(text => {
+                            throw new Error(`Server error: ${text}`);
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Response Data:', data);  // Proveri šta vraća server
+                    if (data.message === "Comment deleted successfully") {
+                        const commentElement = document.querySelector(`#comment-${commentId}`);
+                        if (commentElement) {
+                            commentElement.remove();  // Ukloni HTML element sa stranice
+                            console.log('Comment removed from DOM');  // Potvrdi da je element uklonjen
+                        } else {
+                            console.log('Comment element not found');
+                        }
+                        alert("Comment deleted successfully!");
+                    } else {
+                        alert("Failed to delete comment: " + (data.error || "Unknown error"));
+                    }
+                })
+                .catch(error => {
+                    console.error("Error deleting comment:", error.message);
+                    alert("Failed to delete comment. Please try again.");
+                });
+        }
+    }
+
+    function openEditCommentModal(commentId, currentContent) {
+        document.getElementById("editCommentId").value = commentId;
+        document.getElementById("editCommentContent").value = currentContent;
+
+        const editCommentModal = new bootstrap.Modal(document.getElementById("editCommentModal"));
+        editCommentModal.show();
+    }
+    async function submitEditComment() {
+        const commentId = document.getElementById("editCommentId").value;
+        const content = document.getElementById("editCommentContent").value;
+        const postId = document.getElementById("commentPostId").value;
+
+        if (!content.trim()) {
+            alert("Content cannot be empty.");
+            return;
+        }
+
+        const updatedComment = content;
+        console.log(updatedComment);
+
+        try {
+            const response = await fetch(`/Comment/EditComment/${commentId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(updatedComment)
+            });
+
+            const result = await response.json();
+            if (!response.ok) {
+                alert(`Error: ${result.Message}`);
+            }
+            if (response.ok) {
+                alert("Comment updated successfully.");
+                const editCommentModal = bootstrap.Modal.getInstance(document.getElementById("editCommentModal"));
+                editCommentModal.hide();
+                loadComments(postId); // Osveži komentare
+            } else {
+                alert(`Error: ${result.Message}`);
+            }
+        } catch (error) {
+            console.error("Error updating comment:", error);
+            alert("An error occurred while updating the comment.");
+        }
+    }
+
+
+    function updatePost(postId) {
+        // Dohvati podatke o postu sa servera
+        fetch(`/PostController/${postId}`)
+            .then(response => response.json())
+            .then(post => {
+                // Popunite modal sa postojećim podacima
+                document.getElementById('updateCaption').value = post.caption;
+                document.getElementById('updateImage').value = post.imageURL;
+
+                // Prikazivanje modala
+                const updatePostModal = new bootstrap.Modal(document.getElementById('updatePostModal'));
+                updatePostModal.show();
+
+                // Dodavanje event listener-a za submit forme
+                document.getElementById('updatePostForm').onsubmit = function (event) {
+                    submitUpdatePost(event, postId);
+                };
+            })
+            .catch(error => {
+                console.error("Error fetching post:", error);
+            });
+    }
+
+
+    function submitUpdatePost(event, postId) {
+        event.preventDefault(); // Sprečava podrazumevani submit forme
+
+        const updatedPost = {
+            caption: document.getElementById('updateCaption').value,
+            imageURL: document.getElementById('updateImage').value
+        };
+
+        // Slanje PUT zahteva za ažuriranje postojećeg posta
+        fetch(`/PostController/${postId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(updatedPost)
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Zatvori modal nakon uspešnog ažuriranja
+                    const updatePostModalElement = document.getElementById('updatePostModal');
+
+                    if (updatePostModalElement) {
+                        // Ako element postoji, inicijalizuj modal
+                        const updatePostModal = new bootstrap.Modal(updatePostModalElement);
+                        updatePostModal.hide(); // Zatvori modal
+                    } else {
+                        console.error('Element sa ID-jem "updatePostModal" nije pronađen!');
+                    }
+                    loadPosts(); // Reload posts after update
+                } else {
+                    alert("Failed to update post: " + data.error);
+                }
+            })
+            .catch(error => {
+                console.error("Error updating post:", error);
+                alert("An error occurred while updating the post.");
+            });
+    }
+
+    let postToDelete = null; // Globalna varijabla za čuvanje ID-ja posta koji treba da se obriše
+
+    // Funkcija koja prikazuje modal za potvrdu brisanja
+    function confirmDelete(postId) {
+        postToDelete = postId; // Zapamti ID posta koji treba obrisati
+        const deletePostModal = new bootstrap.Modal(document.getElementById('deletePostModal'));
+        deletePostModal.show(); // Prikazivanje modala
+    }
+
+    // Funkcija za brisanje posta
+    function deletePost() {
+        if (postToDelete !== null) {
+            fetch(`/PostController/${postToDelete}`, { method: "DELETE" })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        loadPosts(); // Ponovo učitaj postove nakon brisanja
+                        const deletePostModal = bootstrap.Modal.getInstance(document.getElementById('deletePostModal'));
+                        deletePostModal.hide(); // Zatvori modal
+                    } else {
+                        alert("Failed to delete post: " + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error("Error deleting post:", error);
+                });
+        }
+    }
+
+    // Dodaj event listener na dugme za brisanje u modal dialogu
+    document.getElementById('confirmDeleteButton').addEventListener('click', deletePost);
+
+    const currentUserId = '@User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value';
+
+    function likePost(postId) {
+        const button = document.querySelector(`#likeButton-${postId}`);
+        const isLiked = button.classList.contains("liked");
+
+        fetch(`/Like/LikePost`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                user: { UserId: currentUserId,
+                    ProfilePicture: ""  
+                }, // Zameniti sa stvarnim korisničkim ID
+                post: { postId: postId }
+            })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        throw new Error(`Server error: ${text}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Ažuriraj prikaz broja lajkova
+                    button.classList.toggle("liked", data.isLiked); // Dodaj/ukloni klasu "liked"
+
+                    const likeCountElement = document.querySelector(`#likeCount-${postId}`);
+                    if (likeCountElement) {
+                        likeCountElement.textContent = data.likeCount;
+                    }
+                    
+                } else {
+                    alert("Failed to like post: " + (data.error || "Unknown error"));
+                }
+            })
+            .catch(error => {
+                console.error("Error liking post:", error.message);
+            });
+    }
+
+
+    async function likeComment(commentId) {
+        try {
+            const response = await fetch(`/Comment/LikeComment`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    UserId: currentUserId,
+                    CommentId: commentId
+                })
+            });
+
+            const rawResponse = await response.text();
+            console.log('Raw response:', rawResponse);
+
+            let result;
+            try {
+                result = JSON.parse(rawResponse);
+            } catch (parseError) {
+                console.error('Failed to parse response as JSON:', parseError);
+                alert('Greška prilikom učitavanja odgovora od servera');
+                return;
+            }
+
+            if (response.ok) {
+                // Ažuriraj prikazani like count
+                const likeCountElement = document.getElementById(`likeCountComment-${commentId}`);
+                if (likeCountElement) {
+                    likeCountElement.textContent = result.likeCount;
+                }
+            } else {
+                console.error('Greška pri lajkovanju komentara:', result);
+                alert(result.message);
+            }
+
+        } catch (error) {
+            console.error('Error liking comment:', error);
+        }
+    }
+
+
+
+    function unlikePost(postId) {
+        fetch(`/Like/UnlikePost`, {
+            method: "DELETE",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                user: { UserId: currentUserId, ProfilePicture: "" },  // Zameniti sa stvarnim korisničkim ID
+                post: { postId: postId }
+            })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        throw new Error(`Server error: ${text}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Ažuriraj prikaz broja lajkova
+                    const likeCountElement = document.querySelector(`#likeCount-${postId}`);
+                    if (likeCountElement) {
+                        likeCountElement.textContent = data.likeCount;
+                    }
+
+                    // Sakrij "Unlike" dugme, prikazi "Like" dugme
+                    document.querySelector(`#likeButton-${postId}`).style.display = "inline-block";
+                    document.querySelector(`#unlikeButton-${postId}`).style.display = "none";
+
+                    alert("Post unliked successfully!");
+                } else {
+                    alert("Failed to unlike post: " + (data.error || "Unknown error"));
+                }
+            })
+            .catch(error => {
+                console.error("Error unliking post:", error.message);
+            });
+    }
+
+    // Call to load posts when the page is loaded
+    document.addEventListener("DOMContentLoaded", loadPosts);
+    document.addEventListener("DOMContentLoaded", loadFriends);
+</script>
+<style>
+
+#postList {
+    padding-left: 0;
+    margin-bottom: 0;
+}
+
+#postList .list-group-item {
+    background-color: #f9f9fb;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    padding: 16px 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    transition: box-shadow 0.3s ease;
+    cursor: pointer;
+}
+
+#postList .list-group-item:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    background-color: #e9f5ff;
+}
+
+#postList .list-group-item h6 {
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #0d6efd; /* Bootstrap primary color */
+}
+
+#postList .list-group-item p {
+    margin: 0;
+    color: #6c757d; /* Bootstrap secondary text */
+    font-size: 0.9rem;
+    line-height: 1.3;
+}
+    .profile-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .profile-img {
+        width: 150px;
+        height: 150px;
+        object-fit: cover;
+    }
+
+    .posts-list, .friends-list {
+        max-height: 300px;
+        overflow-y: auto;
+
+    }
+
+    .post-img {
+        width: 100px;
+        height: 100px;
+        object-fit: cover;
+    }
+
+    .heart-button {
+        background-color: transparent;
+        border: none;
+        font-size: 1.5rem;
+        color: #ccc; /* Sivo za nelajkovano srce
+        cursor: pointer;
+        transition: color 0.3s ease;
+    }
+
+        .heart-button.liked {
+            color: #ff4757; /* Crveno za lajkovano srce */
+        }
+
+        .heart-button:hover {
+            color: #ff6b81; /* Svetlije crveno kada se prelazi mišem */
+        }
+
+</style>

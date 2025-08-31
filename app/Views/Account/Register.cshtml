@@ -1,0 +1,36 @@
+﻿@{
+    ViewData["Title"] = "Registracija";
+}
+
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 90vh;">
+    <div class="card shadow p-4" style="width: 100%; max-width: 500px;">
+        <h3 class="text-center mb-4">Registracija</h3>
+        <form method="post" enctype="multipart/form-data" action="/Account/Register">
+            <div class="mb-3">
+                <label for="Username" class="form-label">Korisničko ime</label>
+                <input type="text" id="Username" name="Username" class="form-control" required />
+            </div>
+            <div class="mb-3">
+                <label for="FullName" class="form-label">Puno ime</label>
+                <input type="text" id="FullName" name="FullName" class="form-control" required />
+            </div>
+            <div class="mb-3">
+                <label for="Email" class="form-label">Email</label>
+                <input type="email" id="Email" name="Email" class="form-control" required />
+            </div>
+            <div class="mb-3">
+                <label for="Password" class="form-label">Lozinka</label>
+                <input type="password" id="Password" name="Password" class="form-control" required />
+            </div>
+            <div class="mb-3">
+                <label for="ProfilePicture" class="form-label">Profilna slika</label>
+                <input type="file" id="ProfilePicture" name="ProfilePicture" class="form-control" accept="image/*" />
+            </div>
+            <div class="mb-3">
+                <label for="Bio" class="form-label">Biografija</label>
+                <textarea id="Bio" name="Bio" rows="3" class="form-control"></textarea>
+            </div>
+            <button type="submit" class="btn btn-success w-100">Registruj se</button>
+        </form>
+    </div>
+</div>
